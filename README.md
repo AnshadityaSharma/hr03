@@ -145,17 +145,17 @@ npm run dev
 
 ### Employee Access
 - **Email**: employee@company.com
-- **Password**: emp123
+- **Password**: DemoEmp2024!
 - **Features**: Leave requests, asset requests, policy search, onboarding tasks
 
 ### HR Manager Access
 - **Email**: hr@company.com
-- **Password**: hr123
+- **Password**: DemoHR2024!
 - **Features**: All employee features + approval workflows, team management
 
 ### Admin Access
 - **Email**: admin@company.com
-- **Password**: admin123
+- **Password**: DemoAdmin2024!
 - **Features**: All features + system administration, SLA monitoring
 
 ## API Endpoints

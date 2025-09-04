@@ -17,3 +17,4 @@ export async function api<T = any>(path: string, init?: RequestInit): Promise<T>
   if (!res.ok) throw new Error(data?.error || `Request failed: ${res.status}`);
   return data as T;
 }
+

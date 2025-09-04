@@ -5,10 +5,12 @@ import { api } from '../../lib/api';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
+import Dock from '../../components/ui/Dock';
 import TaskCard from './components/TaskCard';
 import ProgressPanel from './components/ProgressPanel';
 import TaskFilters from './components/TaskFilters';
 import TaskDetailsModal from './components/TaskDetailsModal';
+import AddTaskModal from './components/AddTaskModal';
 import BulkActionsPanel from './components/BulkActionsPanel';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -18,6 +20,7 @@ const OnboardingTasks = () => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -204,7 +207,7 @@ const OnboardingTasks = () => {
         }
       } catch (error) {
         console.error('Failed to load tasks:', error);
-        // Keep using mock data as fallback
+        // Keep using mock data if API fails
       }
     };
 
@@ -215,87 +218,63 @@ const OnboardingTasks = () => {
 
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
-    let filtered = tasks?.filter(task => {
-      const matchesSearch = task?.title?.toLowerCase()?.includes(filters?.search?.toLowerCase()) ||
-                           task?.description?.toLowerCase()?.includes(filters?.search?.toLowerCase());
-      const matchesStatus = filters?.status === 'all' || 
-                           (filters?.status === 'overdue' ? 
-                            (new Date(task.dueDate) < new Date() && task?.status !== 'completed') :
-                            task?.status === filters?.status);
-      const matchesPriority = filters?.priority === 'all' || task?.priority === filters?.priority;
-      const matchesCategory = filters?.category === 'all' || task?.category === filters?.category;
-      const matchesAssignee = filters?.assignee === 'all' || task?.assignedTo === filters?.assignee;
+    let filtered = tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+                           task.description.toLowerCase().includes(filters.search.toLowerCase());
+      const matchesStatus = filters.status === 'all' || task.status === filters.status;
+      const matchesPriority = filters.priority === 'all' || task.priority === filters.priority;
+      const matchesCategory = filters.category === 'all' || task.category === filters.category;
+      const matchesAssignee = filters.assignee === 'all' || task.assignedTo === filters.assignee;
 
       return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesAssignee;
     });
 
     // Sort tasks
-    filtered?.sort((a, b) => {
+    filtered.sort((a, b) => {
       let aValue, bValue;
       
-      switch (filters?.sortBy) {
+      switch (filters.sortBy) {
         case 'dueDate':
           aValue = new Date(a.dueDate);
           bValue = new Date(b.dueDate);
           break;
         case 'priority':
-          const priorityOrder = { high: 3, medium: 2, low: 1 };
-          aValue = priorityOrder?.[a?.priority];
-          bValue = priorityOrder?.[b?.priority];
+          const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+          aValue = priorityOrder[a.priority] || 0;
+          bValue = priorityOrder[b.priority] || 0;
           break;
         case 'status':
           const statusOrder = { pending: 1, in_progress: 2, completed: 3 };
-          aValue = statusOrder?.[a?.status];
-          bValue = statusOrder?.[b?.status];
-          break;
-        case 'title':
-          aValue = a?.title?.toLowerCase();
-          bValue = b?.title?.toLowerCase();
-          break;
-        case 'category':
-          aValue = a?.category?.toLowerCase();
-          bValue = b?.category?.toLowerCase();
+          aValue = statusOrder[a.status] || 0;
+          bValue = statusOrder[b.status] || 0;
           break;
         default:
-          return 0;
+          aValue = a.title;
+          bValue = b.title;
       }
 
-      if (aValue < bValue) return filters?.sortOrder === 'asc' ? -1 : 1;
-      if (aValue > bValue) return filters?.sortOrder === 'asc' ? 1 : -1;
-      return 0;
+      if (filters.sortOrder === 'desc') {
+        return bValue > aValue ? 1 : -1;
+      }
+      return aValue > bValue ? 1 : -1;
     });
 
     return filtered;
   }, [tasks, filters]);
 
-  // Get unique values for filter options
-  const categories = [...new Set(tasks.map(task => task.category))];
-  const assignees = [...new Set(tasks.map(task => task.assignedTo))];
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      status: 'all',
-      priority: 'all',
-      category: 'all',
-      assignee: 'all',
-      sortBy: 'dueDate',
-      sortOrder: 'asc',
-      viewMode: 'list'
-    });
-  };
-
   const handleToggleComplete = async (taskId, completed) => {
     try {
-      if (completed) {
-        await api('/api/onboarding/complete', {
-          method: 'POST',
-          body: JSON.stringify({ task_id: taskId })
-        });
+      const response = await api('/api/onboarding/complete', {
+        method: 'POST',
+        body: JSON.stringify({
+          task_id: taskId,
+          completed: completed
+          // Note: user_email removed as it's not needed by the backend
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(response.error || 'Failed to update task');
       }
       
       setTasks(prev => prev?.map(task => 
@@ -322,6 +301,10 @@ const OnboardingTasks = () => {
     setTasks(prev => prev?.map(task => 
       task?.id === updatedTask?.id ? updatedTask : task
     ));
+  };
+
+  const handleAddTask = (newTask) => {
+    setTasks(prev => [newTask, ...prev]);
   };
 
   const handleTaskSelection = (taskId, selected) => {
@@ -366,7 +349,7 @@ const OnboardingTasks = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Header />
       <SLAAlertBanner />
       <main className="pt-16">
@@ -375,11 +358,11 @@ const OnboardingTasks = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 flex items-center space-x-3">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-3">
                   <Icon name="CheckSquare" size={32} className="text-primary" />
                   <span>Onboarding Tasks</span>
                 </h1>
-                <p className="text-slate-600 mt-2">
+                <p className="text-slate-600 dark:text-slate-400 mt-2">
                   Track and complete your onboarding tasks to get started with the company
                 </p>
               </div>
@@ -391,7 +374,7 @@ const OnboardingTasks = () => {
                     iconName="Plus"
                     iconPosition="left"
                     iconSize={16}
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={() => setIsAddTaskModalOpen(true)}
                   >
                     Add Task
                   </Button>
@@ -400,7 +383,6 @@ const OnboardingTasks = () => {
                     iconName="Settings"
                     iconPosition="left"
                     iconSize={16}
-                    onClick={() => alert('Manage Templates clicked!')}
                   >
                     Manage Templates
                   </Button>
@@ -412,95 +394,75 @@ const OnboardingTasks = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3 space-y-6">
-              {/* Filters */}
+              {/* Filters & Search */}
               <TaskFilters
                 filters={filters}
-                onFilterChange={handleFilterChange}
-                onClearFilters={handleClearFilters}
-                categories={categories}
-                assignees={assignees}
+                onFiltersChange={setFilters}
+                onSelectAll={handleSelectAll}
+                onDeselectAll={handleDeselectAll}
+                selectedCount={selectedTasks.length}
+                totalCount={filteredTasks.length}
               />
 
-              {/* Bulk Actions */}
-              {selectedTasks?.length > 0 && (
-                <BulkActionsPanel
-                  selectedTasks={selectedTasks}
-                  onSelectAll={handleSelectAll}
-                  onDeselectAll={handleDeselectAll}
-                  onBulkAction={handleBulkAction}
-                  totalTasks={filteredTasks?.length}
-                  userRole={userRole}
-                />
-              )}
-
-              {/* Tasks List */}
+              {/* Task List */}
               <div className="space-y-4">
-                {filteredTasks?.length === 0 ? (
-                  <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-                    <Icon name="CheckSquare" size={48} className="text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-slate-900 mb-2">No tasks found</h3>
-                    <p className="text-slate-600">
-                      {filters?.search || filters?.status !== 'all' || filters?.priority !== 'all' || filters?.category !== 'all' ?'Try adjusting your filters to see more tasks.' :'All onboarding tasks have been completed!'}
+                {filteredTasks.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Icon name="CheckSquare" size={48} className="text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                      No tasks found
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-400">
+                      {filters.search ? 'Try adjusting your search criteria.' : 'All tasks are completed!'}
                     </p>
                   </div>
                 ) : (
-                  filteredTasks?.map(task => (
-                    <div key={task?.id} className="relative">
-                      <div className="absolute left-4 top-6 z-10">
-                        <input
-                          type="checkbox"
-                          checked={selectedTasks?.includes(task?.id)}
-                          onChange={(e) => handleTaskSelection(task?.id, e?.target?.checked)}
-                          className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
-                        />
-                      </div>
-                      <div className="pl-10">
-                        <TaskCard
-                          task={task}
-                          onToggleComplete={handleToggleComplete}
-                          onViewDetails={handleViewDetails}
-                          userRole={user?.role}
-                        />
-                      </div>
-                    </div>
+                  filteredTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onToggleComplete={handleToggleComplete}
+                      onViewDetails={handleViewDetails}
+                      onSelectionChange={handleTaskSelection}
+                      isSelected={selectedTasks.includes(task.id)}
+                      viewMode={filters.viewMode}
+                    />
                   ))
                 )}
               </div>
+
+              {/* Bulk Actions */}
+              {selectedTasks.length > 0 && (
+                <BulkActionsPanel
+                  selectedCount={selectedTasks.length}
+                  onBulkAction={handleBulkAction}
+                  selectedTaskIds={selectedTasks}
+                />
+              )}
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
-              <ProgressPanel tasks={tasks} userRole={user?.role} />
-              {/* Dock Demo: Add Dock to sidebar for visibility */}
-              <div className="mt-6">
-                {/* Example Dock usage, replace icons with your own if needed */}
-                <Dock
-                  items={[
-                    { icon: <Icon name="Home" size={18} />, label: 'Home', onClick: () => alert('Home!') },
-                    { icon: <Icon name="Archive" size={18} />, label: 'Archive', onClick: () => alert('Archive!') },
-                    { icon: <Icon name="User" size={18} />, label: 'Profile', onClick: () => alert('Profile!') },
-                    { icon: <Icon name="Settings" size={18} />, label: 'Settings', onClick: () => alert('Settings!') },
-                  ]}
-                  panelHeight={68}
-                  baseItemSize={50}
-                  magnification={70}
-                />
-              </div>
+            <div className="space-y-6">
+              <ProgressPanel tasks={tasks} />
             </div>
           </div>
         </div>
       </main>
-      {/* Task Details Modal */}
+
+      {/* Modals */}
       <TaskDetailsModal
-        task={selectedTask}
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedTask(null);
-        }}
+        onClose={() => setIsModalOpen(false)}
+        task={selectedTask}
         onSave={handleSaveTask}
-        userRole={user?.role}
       />
+
+      <AddTaskModal
+        isOpen={isAddTaskModalOpen}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onSave={handleAddTask}
+      />
+
       <FloatingChatWidget />
     </div>
   );

@@ -26,13 +26,13 @@ const Dashboard = () => {
     const baseActions = [
       {
         title: 'Leave Management',
-        description: 'Request time off and check balances',
+        description: 'Request time off and view leave history',
         icon: 'Calendar',
         iconColor: 'var(--color-primary)',
         route: '/leave-management',
-        pendingCount: currentRole === 'Employee' ? 1 : currentRole === 'Manager' ? 3 : 5,
+        pendingCount: 0,
         status: 'active',
-        actionText: 'Manage Leaves'
+        actionText: 'Manage Leave'
       },
       {
         title: 'Asset Management',
@@ -40,19 +40,29 @@ const Dashboard = () => {
         icon: 'Package',
         iconColor: 'var(--color-accent)',
         route: '/asset-management',
-        pendingCount: currentRole === 'Employee' ? 0 : currentRole === 'Manager' ? 2 : 4,
+        pendingCount: 0,
         status: 'active',
-        actionText: 'View Assets'
+        actionText: 'Manage Assets'
       },
       {
         title: 'Policy Center',
-        description: 'Access company policies and procedures',
+        description: 'Search and access company policies',
         icon: 'FileText',
         iconColor: 'var(--color-secondary)',
         route: '/policy-center',
         pendingCount: 0,
         status: 'active',
         actionText: 'Browse Policies'
+      },
+      {
+        title: 'Profile Settings',
+        description: 'Update your profile and preferences',
+        icon: 'User',
+        iconColor: 'var(--color-success)',
+        route: '/profile',
+        pendingCount: 0,
+        status: 'active',
+        actionText: 'Edit Profile'
       }
     ];
 
@@ -198,28 +208,30 @@ const Dashboard = () => {
             changeType: 'neutral',
             icon: 'Calendar',
             chartData: [
-              { name: 'Q1', value: 22 },
-              { name: 'Q2', value: 20 },
-              { name: 'Q3', value: 18 },
-              { name: 'Q4', value: 18 }
+              { name: 'Jan', value: 20 },
+              { name: 'Feb', value: 19 },
+              { name: 'Mar', value: 18 },
+              { name: 'Apr', value: 18 },
+              { name: 'May', value: 18 },
+              { name: 'Jun', value: 18 }
             ],
             chartType: 'line',
             suffix: ' days',
-            description: 'Remaining annual leave days'
+            description: 'Your remaining leave days'
           },
           {
-            title: 'My Assets',
+            title: 'Asset Requests',
             value: '3',
-            change: '0',
-            changeType: 'neutral',
+            change: '+1',
+            changeType: 'positive',
             icon: 'Package',
             chartData: [
               { name: 'Laptop', value: 1 },
               { name: 'Monitor', value: 1 },
-              { name: 'Phone', value: 1 }
+              { name: 'Headphones', value: 1 }
             ],
             chartType: 'bar',
-            description: 'Assets currently assigned to you'
+            description: 'Assets you have requested'
           },
           {
             title: 'Tasks Completed',
@@ -242,7 +254,7 @@ const Dashboard = () => {
         <title>Dashboard - Enterprise HRMS Portal</title>
         <meta name="description" content="Your comprehensive HR management dashboard with role-based access to leave management, asset tracking, policy center, and onboarding tasks." />
       </Helmet>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <Header />
         <SLAAlertBanner />
         
@@ -259,7 +271,7 @@ const Dashboard = () => {
               <div className="lg:col-span-2 space-y-8">
                 {/* Quick Actions */}
                 <section>
-                  <h2 className="text-xl font-semibold text-slate-900 mb-6">Quick Actions</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Quick Actions</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {getQuickActions()?.map((action, index) => (
                       <QuickActionCard
@@ -279,7 +291,7 @@ const Dashboard = () => {
 
                 {/* Mini Analytics */}
                 <section>
-                  <h2 className="text-xl font-semibold text-slate-900 mb-6">Analytics Overview</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-6">Analytics Overview</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {getAnalyticsData()?.map((analytics, index) => (
                       <MiniAnalyticsCard

@@ -148,17 +148,25 @@ const LeaveManagement = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('Submitting leave request for user:', user.email);
+      console.log('Form data:', formData);
+      
       // Call the backend API
+      const requestBody = {
+        user_email: user.email,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        leave_type: formData.leaveType
+        // Note: reason field removed as it's not in the database schema
+      };
+      
+      console.log('Request body:', requestBody);
       const response = await api('/api/leaves/create', {
         method: 'POST',
-        body: JSON.stringify({
-          user_email: user.email,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-          leave_type: formData.leaveType,
-          reason: formData.reason
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log('Backend response:', response);
       
       const newRequest = {
         id: response.leave_id,

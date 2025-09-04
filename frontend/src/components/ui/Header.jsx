@@ -130,12 +130,18 @@ const Header = () => {
                     <p className="text-sm font-medium text-card-foreground">{user?.name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
-                  <motion.button
-                    whileHover={{ x: 4 }}
-                    className="w-full text-left px-3 py-2 text-sm text-card-foreground hover:bg-muted/50 transition-spring"
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="block"
                   >
-                    Profile Settings
-                  </motion.button>
+                    <motion.div
+                      whileHover={{ x: 4 }}
+                      className="w-full text-left px-3 py-2 text-sm text-card-foreground hover:bg-muted/50 transition-spring cursor-pointer"
+                    >
+                      Profile Settings
+                    </motion.div>
+                  </Link>
                   <motion.button
                     whileHover={{ x: 4 }}
                     className="w-full text-left px-3 py-2 text-sm text-card-foreground hover:bg-muted/50 transition-spring"
@@ -177,45 +183,47 @@ const Header = () => {
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="lg:hidden bg-card border-t border-border shadow-elevation-2 backdrop-blur-sm overflow-hidden"
           >
-            <nav className="px-4 py-3 space-y-1">
-              {navigationItems?.map((item, index) => (
-                <motion.div
+            <div className="px-4 py-2 space-y-1">
+              {navigationItems?.map((item) => (
+                <Link
                   key={item?.path}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 * index, duration: 0.3 }}
+                  to={item?.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive(item?.path)
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
                 >
-                  <Link
-                    to={item?.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-spring ${
-                      isActive(item?.path)
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-card-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon name={item?.icon} size={18} />
-                    <span>{item?.label}</span>
-                  </Link>
-                </motion.div>
+                  <Icon name={item?.icon} size={16} />
+                  <span>{item?.label}</span>
+                </Link>
               ))}
-              
-              {/* Mobile User Info */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.3 }}
-                className="pt-3 border-t border-border"
+              <Link
+                to="/profile"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive('/profile')
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
               >
-                <div className="px-3 py-2">
-                  <p className="text-sm font-medium text-card-foreground">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                    {user?.role}
-                  </span>
-                </div>
-              </motion.div>
-            </nav>
+                <Icon name="User" size={16} />
+                <span>Profile</span>
+              </Link>
+            </div>
+            <div className="border-t border-border px-4 py-2">
+              <button
+                onClick={() => {
+                  handleLogout();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200 w-full"
+              >
+                <Icon name="LogOut" size={16} />
+                <span>Sign Out</span>
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

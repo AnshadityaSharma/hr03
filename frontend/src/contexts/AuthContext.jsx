@@ -13,7 +13,6 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Mock user data - in real app this would come from backend
@@ -22,74 +21,84 @@ export const AuthProvider = ({ children }) => {
       email: 'admin@company.com',
       name: 'Admin User',
       role: UserRoles.ADMIN,
-      password: 'admin123'
+      password: 'DemoAdmin2024!'
     },
     'hr@company.com': {
       email: 'hr@company.com',
       name: 'HR Manager',
       role: UserRoles.HR_MANAGER,
-      password: 'hr123'
+      password: 'DemoHR2024!'
     },
     'employee@company.com': {
       email: 'employee@company.com',
       name: 'John Employee',
       role: UserRoles.EMPLOYEE,
-      password: 'emp123'
+      password: 'DemoEmp2024!'
     }
   };
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const savedUser = localStorage.getItem('hrms-user');
+    // Check for existing session
+    const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setIsAuthenticated(true);
-      } catch (error) {
-        localStorage.removeItem('hrms-user');
-      }
+      setUser(JSON.parse(savedUser));
     }
     setLoading(false);
   }, []);
 
-  const login = (email, password) => {
-    const userData = mockUsers[email];
-    if (userData && userData.password === password) {
-      const { password: _, ...userWithoutPassword } = userData;
-      setUser(userWithoutPassword);
-      setIsAuthenticated(true);
-      localStorage.setItem('hrms-user', JSON.stringify(userWithoutPassword));
-      return { success: true };
+  const login = async (email, password) => {
+    try {
+      console.log('Attempting login for:', email);
+      
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.user) {
+        console.log('Login successful:', data.user);
+        setUser(data.user);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        return { success: true };
+      } else {
+        console.log('Login failed:', data.error);
+        return { success: false, error: data.error || 'Invalid credentials' };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'Network error. Please check your connection.' };
     }
-    return { success: false, error: 'Invalid credentials' };
   };
 
   const logout = () => {
     setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('hrms-user');
+    localStorage.removeItem('user');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userRole');
   };
 
   const hasRole = (requiredRole) => {
-    if (!user) return false;
-    
-    const roleHierarchy = {
-      [UserRoles.EMPLOYEE]: 1,
-      [UserRoles.HR_MANAGER]: 2,
-      [UserRoles.ADMIN]: 3
-    };
-    
-    return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+    if (!user) {
+      console.log('hasRole: No user found');
+      return false;
+    }
+    const hasAccess = user.role === requiredRole;
+    console.log(`hasRole: User role ${user.role} vs required ${requiredRole} = ${hasAccess}`);
+    return hasAccess;
   };
 
   const value = {
     user,
-    isAuthenticated,
-    loading,
     login,
     logout,
-    hasRole
+    hasRole,
+    loading,
+    isAuthenticated: !!user
   };
 
   return (

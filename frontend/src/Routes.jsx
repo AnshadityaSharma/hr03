@@ -11,6 +11,7 @@ import AssetManagement from './pages/asset-management';
 import PolicyCenter from './pages/policy-center';
 import OnboardingTasks from './pages/onboarding-tasks';
 import AdminPage from './pages/Admin';
+import Profile from './pages/profile';
 import { UserRoles } from './lib/types';
 
 const Routes = () => {
@@ -56,6 +57,12 @@ const Routes = () => {
           <Route path="/onboarding-tasks" element={
             <ProtectedRoute requiredRole={UserRoles.HR_MANAGER}>
               <OnboardingTasks />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/profile" element={
+            <ProtectedRoute requiredRole={UserRoles.EMPLOYEE}>
+              <Profile />
             </ProtectedRoute>
           } />
           

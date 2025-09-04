@@ -67,7 +67,7 @@ const LoginForm = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Use the auth context login function
-      const result = login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
       
       if (!result.success) {
         setErrors({
@@ -101,7 +101,7 @@ const LoginForm = () => {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
         {/* General Error Message */}
         {errors?.general && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3">
@@ -121,6 +121,7 @@ const LoginForm = () => {
           error={errors?.email}
           required
           disabled={isLoading}
+          autoComplete="username"
         />
 
         {/* Password Field */}

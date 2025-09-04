@@ -8,50 +8,63 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: 'var(--color-border)', // slate-200
-        input: 'var(--color-input)', // white
-        ring: 'var(--color-ring)', // blue-700
-        background: 'var(--color-background)', // slate-50
-        foreground: 'var(--color-foreground)', // slate-900
+        border: 'var(--color-border)',
+        input: 'var(--color-input)',
+        ring: 'var(--color-ring)',
+        background: 'var(--color-background)',
+        foreground: 'var(--color-foreground)',
         primary: {
-          DEFAULT: 'var(--color-primary)', // blue-700
-          foreground: 'var(--color-primary-foreground)', // white
+          DEFAULT: 'var(--color-primary)',
+          foreground: 'var(--color-primary-foreground)',
         },
         secondary: {
-          DEFAULT: 'var(--color-secondary)', // slate-500
-          foreground: 'var(--color-secondary-foreground)', // white
+          DEFAULT: 'var(--color-secondary)',
+          foreground: 'var(--color-secondary-foreground)',
         },
         destructive: {
-          DEFAULT: 'var(--color-destructive)', // red-600
-          foreground: 'var(--color-destructive-foreground)', // white
+          DEFAULT: 'var(--color-destructive)',
+          foreground: 'var(--color-destructive-foreground)',
         },
         muted: {
-          DEFAULT: 'var(--color-muted)', // slate-100
-          foreground: 'var(--color-muted-foreground)', // slate-600
+          DEFAULT: 'var(--color-muted)',
+          foreground: 'var(--color-muted-foreground)',
         },
         accent: {
-          DEFAULT: 'var(--color-accent)', // sky-500
-          foreground: 'var(--color-accent-foreground)', // white
+          DEFAULT: 'var(--color-accent)',
+          foreground: 'var(--color-accent-foreground)',
         },
         popover: {
-          DEFAULT: 'var(--color-popover)', // white
-          foreground: 'var(--color-popover-foreground)', // slate-900
+          DEFAULT: 'var(--color-popover)',
+          foreground: 'var(--color-popover-foreground)',
         },
         card: {
-          DEFAULT: 'var(--color-card)', // white
-          foreground: 'var(--color-card-foreground)', // slate-900
+          DEFAULT: 'var(--color-card)',
+          foreground: 'var(--color-card-foreground)',
         },
         success: {
-          DEFAULT: 'var(--color-success)', // emerald-600
-          foreground: 'var(--color-success-foreground)', // white
+          DEFAULT: 'var(--color-success)',
+          foreground: 'var(--color-success-foreground)',
         },
         warning: {
-          DEFAULT: 'var(--color-warning)', // amber-600
-          foreground: 'var(--color-warning-foreground)', // white
+          DEFAULT: 'var(--color-warning)',
+          foreground: 'var(--color-warning-foreground)',
         },
         error: {
-          DEFAULT: 'var(--color-error)', // red-600
-          foreground: 'var(--color-error-foreground)', // white
+          DEFAULT: 'var(--color-error)',
+          foreground: 'var(--color-error-foreground)',
+        },
+        // Enhanced slate colors for better dark mode support
+        slate: {
+          50: 'var(--color-slate-50)',
+          100: 'var(--color-slate-100)',
+          200: 'var(--color-slate-200)',
+          300: 'var(--color-slate-300)',
+          400: 'var(--color-slate-400)',
+          500: 'var(--color-slate-500)',
+          600: 'var(--color-slate-600)',
+          700: 'var(--color-slate-700)',
+          800: 'var(--color-slate-800)',
+          900: 'var(--color-slate-900)',
         },
       },
       fontFamily: {
@@ -83,6 +96,7 @@ export default {
         'float': 'float 3s ease-in-out infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
         'shimmer': 'shimmer 2s linear infinite',
+        'theme-transition': 'themeTransition 0.3s ease',
       },
       keyframes: {
         fadeIn: {
@@ -113,14 +127,27 @@ export default {
           '0%': { backgroundPosition: '-200px 0' },
           '100%': { backgroundPosition: 'calc(200px + 100%) 0' },
         },
+        themeTransition: {
+          '0%': { 
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)'
+          },
+          '100%': { 
+            backgroundColor: 'var(--color-background)',
+            color: 'var(--color-foreground)'
+          },
+        },
       },
       boxShadow: {
-        'elevation-1': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-        'elevation-2': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-        'elevation-3': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-        'glow-sm': '0 0 10px rgba(59, 130, 246, 0.3)',
+        'elevation-1': 'var(--shadow-elevation-1)',
+        'elevation-2': 'var(--shadow-elevation-2)',
+        'elevation-3': 'var(--shadow-elevation-3)',
+        'glow-sm': 'var(--shadow-glow-sm)',
         'glow-md': '0 0 20px rgba(59, 130, 246, 0.4)',
         'glow-lg': '0 0 30px rgba(59, 130, 246, 0.5)',
+      },
+      transitionProperty: {
+        'theme': 'background-color, border-color, color, box-shadow',
       },
     },
   },
