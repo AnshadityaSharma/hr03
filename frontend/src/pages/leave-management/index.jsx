@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRoles } from '../../lib/types';
+import { api } from '../../lib/api';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
@@ -10,7 +13,7 @@ import LeaveBalanceCard from './components/LeaveBalanceCard';
 import QuickStatsCards from './components/QuickStatsCards';
 
 const LeaveManagement = () => {
-  const [userRole, setUserRole] = useState('Employee');
+  const { user, hasRole } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
@@ -134,45 +137,43 @@ const LeaveManagement = () => {
   };
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') || 'Employee';
-    setUserRole(savedRole);
-    
-    // Set mock data
+    // Set mock data for now - in real app this would come from API
     setLeaveRequests(mockLeaveRequests);
     setPendingApprovals(mockPendingApprovals);
     setLeaveBalances(mockLeaveBalances);
     setQuickStats(mockQuickStats);
-
-    // Listen for role changes
-    const handleRoleChange = (event) => {
-      setUserRole(event?.detail);
-    };
-
-    window.addEventListener('roleChanged', handleRoleChange);
-    return () => window.removeEventListener('roleChanged', handleRoleChange);
   }, []);
 
   const handleSubmitLeaveRequest = async (formData) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the backend API
+      const response = await api('/api/leaves/create', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_email: user.email,
+          start_date: formData.startDate,
+          end_date: formData.endDate,
+          leave_type: formData.leaveType,
+          reason: formData.reason
+        })
+      });
       
       const newRequest = {
-        id: Date.now(),
-        employeeName: "John Doe",
+        id: response.leave_id,
+        employeeName: user.name,
         department: "Engineering",
         position: "Senior Developer",
-        type: formData?.leaveType,
-        startDate: formData?.startDate,
-        endDate: formData?.endDate,
+        type: formData.leaveType,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
         days: Math.ceil((new Date(formData.endDate) - new Date(formData.startDate)) / (1000 * 60 * 60 * 24)) + 1,
-        reason: formData?.reason,
+        reason: formData.reason,
         status: "pending",
         approver: "Sarah Johnson",
-        submittedDate: new Date()?.toISOString(),
-        attachment: formData?.attachment?.name || null
+        submittedDate: new Date().toISOString(),
+        attachment: formData.attachment?.name || null
       };
       
       setLeaveRequests(prev => [newRequest, ...prev]);
@@ -181,7 +182,7 @@ const LeaveManagement = () => {
       alert('Leave request submitted successfully!');
       
     } catch (error) {
-      alert('Failed to submit leave request. Please try again.');
+      alert(`Failed to submit leave request: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -284,13 +285,13 @@ const LeaveManagement = () => {
                 <LeaveRequestsTable 
                   requests={leaveRequests}
                   onExport={handleExportCSV}
-                  userRole={userRole}
+                  userRole={user?.role}
                 />
               </div>
 
               {/* Right Column - Approvals (for Managers/HR) */}
               <div className="xl:col-span-1">
-                {(userRole === 'Manager' || userRole === 'HR Admin') && (
+                {hasRole(UserRoles.HR_MANAGER) && (
                   <div className="sticky top-24">
                     <ApprovalSection 
                       pendingRequests={pendingApprovals}

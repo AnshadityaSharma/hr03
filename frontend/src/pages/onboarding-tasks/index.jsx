@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRoles } from '../../lib/types';
+import { api } from '../../lib/api';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
@@ -11,7 +14,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
 const OnboardingTasks = () => {
-  const [userRole, setUserRole] = useState('Employee');
+  const { user, hasRole } = useAuth();
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -171,16 +174,44 @@ const OnboardingTasks = () => {
   ]);
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') || 'Employee';
-    setUserRole(savedRole);
-
-    const handleRoleChange = (event) => {
-      setUserRole(event?.detail);
+    // Load tasks from API
+    const loadTasks = async () => {
+      try {
+        const response = await api(`/api/onboarding/tasks?email=${encodeURIComponent(user.email)}`);
+        if (response.ok && response.tasks) {
+          // Transform API response to match our UI format
+          const transformedTasks = response.tasks.map(task => ({
+            id: task.id,
+            title: task.task_name,
+            description: `Complete task: ${task.task_name}`,
+            status: task.completed ? 'completed' : 'pending',
+            priority: 'medium',
+            category: 'Onboarding',
+            assignedTo: user.name,
+            dueDate: task.due_date,
+            estimatedTime: '1 hour',
+            requiresHRApproval: false,
+            requiresDigitalSignature: false,
+            completedAt: task.completed ? task.due_date : null,
+            requirements: [
+              `Complete ${task.task_name}`,
+              'Submit for review if required'
+            ],
+            resources: [],
+            instructions: `Please complete the task: ${task.task_name}`
+          }));
+          setTasks(transformedTasks);
+        }
+      } catch (error) {
+        console.error('Failed to load tasks:', error);
+        // Keep using mock data as fallback
+      }
     };
 
-    window.addEventListener('roleChanged', handleRoleChange);
-    return () => window.removeEventListener('roleChanged', handleRoleChange);
-  }, []);
+    if (user?.email) {
+      loadTasks();
+    }
+  }, [user]);
 
   // Filter and sort tasks
   const filteredTasks = useMemo(() => {
@@ -258,16 +289,28 @@ const OnboardingTasks = () => {
     });
   };
 
-  const handleToggleComplete = (taskId, completed) => {
-    setTasks(prev => prev?.map(task => 
-      task?.id === taskId 
-        ? { 
-            ...task, 
-            status: completed ? 'completed' : 'pending',
-            completedAt: completed ? new Date()?.toISOString() : null
-          }
-        : task
-    ));
+  const handleToggleComplete = async (taskId, completed) => {
+    try {
+      if (completed) {
+        await api('/api/onboarding/complete', {
+          method: 'POST',
+          body: JSON.stringify({ task_id: taskId })
+        });
+      }
+      
+      setTasks(prev => prev?.map(task => 
+        task?.id === taskId 
+          ? { 
+              ...task, 
+              status: completed ? 'completed' : 'pending',
+              completedAt: completed ? new Date()?.toISOString() : null
+            }
+          : task
+      ));
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      alert(`Failed to update task: ${error.message}`);
+    }
   };
 
   const handleViewDetails = (task) => {
@@ -341,7 +384,7 @@ const OnboardingTasks = () => {
                 </p>
               </div>
               
-              {userRole !== 'Employee' && (
+              {hasRole(UserRoles.HR_MANAGER) && (
                 <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
@@ -416,7 +459,7 @@ const OnboardingTasks = () => {
                           task={task}
                           onToggleComplete={handleToggleComplete}
                           onViewDetails={handleViewDetails}
-                          userRole={userRole}
+                          userRole={user?.role}
                         />
                       </div>
                     </div>
@@ -427,7 +470,7 @@ const OnboardingTasks = () => {
 
             {/* Sidebar */}
             <div className="lg:col-span-1 flex flex-col gap-6">
-              <ProgressPanel tasks={tasks} userRole={userRole} />
+              <ProgressPanel tasks={tasks} userRole={user?.role} />
               {/* Dock Demo: Add Dock to sidebar for visibility */}
               <div className="mt-6">
                 {/* Example Dock usage, replace icons with your own if needed */}
@@ -456,7 +499,7 @@ const OnboardingTasks = () => {
           setSelectedTask(null);
         }}
         onSave={handleSaveTask}
-        userRole={userRole}
+        userRole={user?.role}
       />
       <FloatingChatWidget />
     </div>

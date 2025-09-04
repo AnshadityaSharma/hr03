@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -7,6 +8,8 @@ import { Checkbox } from '../../../components/ui/Checkbox';
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -14,13 +17,6 @@ const LoginForm = () => {
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // Mock credentials for different roles
-  const mockCredentials = {
-    'employee@company.com': { password: 'employee123', role: 'Employee' },
-    'manager@company.com': { password: 'manager123', role: 'Manager' },
-    'hradmin@company.com': { password: 'hradmin123', role: 'HR Admin' }
-  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -68,39 +64,31 @@ const LoginForm = () => {
 
     try {
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Check mock credentials
-      const userCredentials = mockCredentials?.[formData?.email?.toLowerCase()];
+      // Use the auth context login function
+      const result = login(formData.email, formData.password);
       
-      if (!userCredentials || userCredentials?.password !== formData?.password) {
+      if (!result.success) {
         setErrors({
-          general: 'Invalid email or password. Please check your credentials and try again.'
+          general: result.error || 'Invalid email or password. Please check your credentials and try again.'
         });
         setIsLoading(false);
         return;
-      }
-
-      // Store authentication data
-      localStorage.setItem('authToken', 'mock-jwt-token-' + Date.now());
-      localStorage.setItem('userRole', userCredentials?.role);
-      localStorage.setItem('userEmail', formData?.email);
-      
-      if (formData?.rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
       }
 
       // Show success message
       const event = new CustomEvent('showToast', {
         detail: {
           type: 'success',
-          message: `Welcome back! Logged in as ${userCredentials.role}`
+          message: `Welcome back! Logged in successfully.`
         }
       });
       window.dispatchEvent(event);
 
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Navigate to intended page or dashboard
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
 
     } catch (error) {
       setErrors({

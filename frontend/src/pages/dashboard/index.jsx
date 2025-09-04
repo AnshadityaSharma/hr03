@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRoles } from '../../lib/types';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
@@ -10,22 +12,14 @@ import SLAMonitoringPanel from './components/SLAMonitoringPanel';
 import RecentActivityFeed from './components/RecentActivityFeed';
 
 const Dashboard = () => {
+  const { user, hasRole } = useAuth();
   const [currentRole, setCurrentRole] = useState('Employee');
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole') || 'Employee';
-    setCurrentRole(role);
-
-    const handleRoleChange = (event) => {
-      setCurrentRole(event?.detail);
-    };
-
-    window.addEventListener('roleChanged', handleRoleChange);
-
-    return () => {
-      window.removeEventListener('roleChanged', handleRoleChange);
-    };
-  }, []);
+    if (user) {
+      setCurrentRole(user.role);
+    }
+  }, [user]);
 
   // Role-based quick actions
   const getQuickActions = () => {
@@ -62,7 +56,7 @@ const Dashboard = () => {
       }
     ];
 
-    if (currentRole === 'Employee') {
+    if (currentRole === UserRoles.EMPLOYEE) {
       baseActions?.push({
         title: 'Onboarding Tasks',
         description: 'Complete your onboarding checklist',
@@ -73,16 +67,29 @@ const Dashboard = () => {
         status: 'pending',
         actionText: 'View Tasks'
       });
-    } else {
+    } else if (hasRole(UserRoles.HR_MANAGER)) {
       baseActions?.push({
         title: 'Team Onboarding',
         description: 'Monitor team onboarding progress',
         icon: 'Users',
         iconColor: 'var(--color-success)',
         route: '/onboarding-tasks',
-        pendingCount: currentRole === 'Manager' ? 1 : 3,
+        pendingCount: currentRole === UserRoles.HR_MANAGER ? 1 : 3,
         status: 'active',
         actionText: 'Monitor Progress'
+      });
+    }
+
+    if (hasRole(UserRoles.ADMIN)) {
+      baseActions?.push({
+        title: 'Admin Panel',
+        description: 'System administration and monitoring',
+        icon: 'Settings',
+        iconColor: 'var(--color-warning)',
+        route: '/admin',
+        pendingCount: 0,
+        status: 'active',
+        actionText: 'Admin Panel'
       });
     }
 
@@ -101,7 +108,7 @@ const Dashboard = () => {
     ];
 
     switch (currentRole) {
-      case 'Manager':
+      case UserRoles.HR_MANAGER:
         return [
           {
             title: 'Team Leave Balance',
@@ -142,7 +149,7 @@ const Dashboard = () => {
           }
         ];
       
-      case 'HR Admin':
+      case UserRoles.ADMIN:
         return [
           {
             title: 'Total Employees',

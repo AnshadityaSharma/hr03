@@ -5,13 +5,14 @@ import Icon from '../AppIcon';
 import Button from './Button';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRoles } from '../../lib/types';
 
 const Header = () => {
   const location = useLocation();
   const { isDark } = useTheme();
+  const { user, logout, hasRole } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentRole, setCurrentRole] = useState('Employee');
-  const [isRoleSwitcherOpen, setIsRoleSwitcherOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const navigationItems = [
@@ -19,21 +20,12 @@ const Header = () => {
     { label: 'Leave Management', path: '/leave-management', icon: 'Calendar' },
     { label: 'Asset Management', path: '/asset-management', icon: 'Package' },
     { label: 'Policy Center', path: '/policy-center', icon: 'FileText' },
-    { label: 'Onboarding Tasks', path: '/onboarding-tasks', icon: 'CheckSquare' },
+    ...(hasRole(UserRoles.HR_MANAGER) ? [{ label: 'Onboarding Tasks', path: '/onboarding-tasks', icon: 'CheckSquare' }] : []),
+    ...(hasRole(UserRoles.ADMIN) ? [{ label: 'Admin Panel', path: '/admin', icon: 'Settings' }] : []),
   ];
 
-  const roles = ['Employee', 'Manager', 'HR Admin'];
-
-  const handleRoleChange = (role) => {
-    setCurrentRole(role);
-    localStorage.setItem('userRole', role);
-    setIsRoleSwitcherOpen(false);
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('authToken');
-    window.location.href = '/login';
+    logout();
   };
 
   const isActive = (path) => location?.pathname === path;
@@ -95,44 +87,11 @@ const Header = () => {
           {/* Theme Toggle */}
           <ThemeToggle size="md" />
 
-          {/* Role Switcher */}
-          <div className="relative hidden lg:block">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsRoleSwitcherOpen(!isRoleSwitcherOpen)}
-              iconName="ChevronDown"
-              iconPosition="right"
-              iconSize={14}
-            >
-              {currentRole}
-            </Button>
-            <AnimatePresence>
-              {isRoleSwitcherOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                  className="absolute right-0 mt-2 w-40 bg-card border border-border rounded-lg shadow-elevation-2 py-1 z-50 backdrop-blur-sm"
-                >
-                  {roles?.map((role) => (
-                    <motion.button
-                      key={role}
-                      whileHover={{ x: 4 }}
-                      onClick={() => handleRoleChange(role)}
-                      className={`w-full text-left px-3 py-2 text-sm transition-spring ${
-                        currentRole === role
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'text-card-foreground hover:bg-muted/50'
-                      }`}
-                    >
-                      {role}
-                    </motion.button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          {/* User Role Badge */}
+          <div className="hidden lg:block">
+            <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+              {user?.role}
+            </span>
           </div>
 
           {/* User Profile Menu */}
@@ -149,7 +108,7 @@ const Header = () => {
               >
                 <Icon name="User" size={16} color="var(--color-muted-foreground)" />
               </motion.div>
-              <span className="hidden lg:block text-sm font-medium text-foreground">John Doe</span>
+              <span className="hidden lg:block text-sm font-medium text-foreground">{user?.name}</span>
               <motion.div
                 animate={{ rotate: isUserMenuOpen ? 180 : 0 }}
                 transition={{ duration: 0.2 }}
@@ -168,8 +127,8 @@ const Header = () => {
                   className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-elevation-2 py-1 z-50 backdrop-blur-sm"
                 >
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="text-sm font-medium text-card-foreground">John Doe</p>
-                    <p className="text-xs text-muted-foreground">john.doe@company.com</p>
+                    <p className="text-sm font-medium text-card-foreground">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <motion.button
                     whileHover={{ x: 4 }}
@@ -241,32 +200,20 @@ const Header = () => {
                 </motion.div>
               ))}
               
-              {/* Mobile Role Switcher */}
+              {/* Mobile User Info */}
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.3 }}
                 className="pt-3 border-t border-border"
               >
-                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Switch Role
-                </p>
-                {roles?.map((role, index) => (
-                  <motion.button
-                    key={role}
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 + 0.1 * index, duration: 0.3 }}
-                    onClick={() => handleRoleChange(role)}
-                    className={`w-full text-left px-3 py-2 text-sm transition-spring rounded-lg ${
-                      currentRole === role
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-card-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    {role}
-                  </motion.button>
-                ))}
+                <div className="px-3 py-2">
+                  <p className="text-sm font-medium text-card-foreground">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                    {user?.role}
+                  </span>
+                </div>
               </motion.div>
             </nav>
           </motion.div>

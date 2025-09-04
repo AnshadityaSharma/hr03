@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../lib/api';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
@@ -18,6 +20,7 @@ import { useTheme } from '../../hooks/useTheme';
 
 const PolicyCenter = () => {
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -140,40 +143,33 @@ const PolicyCenter = () => {
     setIsLoading(true);
 
     try {
-      // Simulate API call with delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      let filteredPolicies = mockPolicies;
-
-      // Filter by search query
       if (query) {
-        filteredPolicies = filteredPolicies?.filter(policy =>
-          policy?.title?.toLowerCase()?.includes(query?.toLowerCase()) ||
-          policy?.summary?.toLowerCase()?.includes(query?.toLowerCase())
-        );
+        // Call the backend API for policy search
+        const response = await api('/api/policies/query', {
+          method: 'POST',
+          body: JSON.stringify({ query })
+        });
+        
+        // Transform the response to match our UI format
+        const transformedResults = [{
+          id: 'search-result',
+          title: 'Search Results',
+          summary: response.answer,
+          category: 'search',
+          categoryLabel: 'Search Results',
+          lastUpdated: new Date().toISOString(),
+          views: 0,
+          downloads: 0,
+          readTime: 2,
+          isNew: false,
+          sources: response.sources || []
+        }];
+        
+        setSearchResults(transformedResults);
+      } else {
+        // Show all policies when no query
+        setSearchResults(mockPolicies);
       }
-
-      // Filter by category
-      if (selectedCategory !== 'all') {
-        filteredPolicies = filteredPolicies?.filter(policy =>
-          policy?.category === selectedCategory
-        );
-      }
-
-      // Apply advanced filters
-      if (filters?.department) {
-        // In real app, this would filter by department-specific policies
-      }
-
-      if (filters?.policyType) {
-        // In real app, this would filter by policy type
-      }
-
-      if (filters?.dateRange) {
-        // In real app, this would filter by date range
-      }
-
-      setSearchResults(filteredPolicies);
     } catch (error) {
       console.error('Search error:', error);
       // Fallback to static results

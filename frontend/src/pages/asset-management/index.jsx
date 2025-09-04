@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useAuth } from '../../contexts/AuthContext';
+import { UserRoles } from '../../lib/types';
+import { api } from '../../lib/api';
 import Header from '../../components/ui/Header';
 import FloatingChatWidget from '../../components/ui/FloatingChatWidget';
 import SLAAlertBanner from '../../components/ui/SLAAlertBanner';
@@ -12,20 +15,12 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
 const AssetManagement = () => {
+  const { user, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [currentRole, setCurrentRole] = useState('Employee');
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') || 'Employee';
-    setCurrentRole(savedRole);
-
-    const handleRoleChange = (event) => {
-      setCurrentRole(event?.detail);
-    };
-
-    window.addEventListener('roleChanged', handleRoleChange);
-    return () => window.removeEventListener('roleChanged', handleRoleChange);
+    // Component mounted
   }, []);
 
   const tabs = [
@@ -36,11 +31,24 @@ const AssetManagement = () => {
     { id: 'guidelines', label: 'Guidelines', icon: 'BookOpen' }
   ];
 
-  const handleAssetRequest = (requestData) => {
-    console.log('New asset request:', requestData);
-    setShowSuccessMessage(true);
-    setTimeout(() => setShowSuccessMessage(false), 5000);
-    setActiveTab('assignments');
+  const handleAssetRequest = async (requestData) => {
+    try {
+      const response = await api('/api/assets/request', {
+        method: 'POST',
+        body: JSON.stringify({
+          user_email: user.email,
+          category: requestData.category,
+          asset_name: requestData.assetName
+        })
+      });
+      
+      console.log('Asset request response:', response);
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+      setActiveTab('assignments');
+    } catch (error) {
+      alert(`Failed to submit asset request: ${error.message}`);
+    }
   };
 
   const handleInventoryRequest = (inventoryData) => {
@@ -131,10 +139,10 @@ const AssetManagement = () => {
             <div className="flex items-center space-x-3">
               <div className="hidden lg:flex items-center space-x-2 text-sm text-slate-600">
                 <Icon name="User" size={16} />
-                <span>Role: {currentRole}</span>
+                <span>Role: {user?.role}</span>
               </div>
               
-              {currentRole !== 'Employee' && (
+              {hasRole(UserRoles.HR_MANAGER) && (
                 <Button
                   variant="outline"
                   iconName="Download"

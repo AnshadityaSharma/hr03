@@ -9,19 +9,19 @@ const LoginCredentialsHelper = () => {
     {
       role: 'Employee',
       email: 'employee@company.com',
-      password: 'employee123',
+      password: 'emp123',
       description: 'Access employee dashboard with basic HR functions'
     },
     {
-      role: 'Manager',
-      email: 'manager@company.com',
-      password: 'manager123',
-      description: 'Access manager dashboard with team oversight capabilities'
+      role: 'HR Manager',
+      email: 'hr@company.com',
+      password: 'hr123',
+      description: 'Access HR manager dashboard with team oversight capabilities'
     },
     {
-      role: 'HR Admin',
-      email: 'hradmin@company.com',
-      password: 'hradmin123',
+      role: 'Admin',
+      email: 'admin@company.com',
+      password: 'admin123',
       description: 'Full administrative access to all HR functions'
     }
   ];
