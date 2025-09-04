@@ -4,6 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import Icon from '../components/AppIcon';
 import Button from '../components/ui/Button';
 
+// Import the AdminHRIS component you created
+import AdminHRIS from './AdminHRIS';
+
 const AdminPage = () => {
   const { user } = useAuth();
   const [isRunningSla, setIsRunningSla] = useState(false);
@@ -155,10 +158,26 @@ const AdminPage = () => {
             </div>
           </div>
         </div>
+
+        {/* HRIS Admin section (full width) */}
+        <div className="mt-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                HRIS Integration (Mock)
+              </h2>
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Sync demo HRIS data or upload CSV
+              </div>
+            </div>
+
+            {/* Render the AdminHRIS component here */}
+            <AdminHRIS />
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default AdminPage;
-
