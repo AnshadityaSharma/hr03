@@ -1,0 +1,27 @@
+openapi: 3.0.3
+info:
+  title: HRMS MVP API
+  version: 0.1.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /api/leaves/create:
+    post:
+      summary: Create leave
+      responses:
+        '200': { description: OK }
+  /api/leaves/{id}/approve:
+    post:
+      summary: Approve leave
+      responses:
+        '200': { description: OK }
+  /api/assets/request:
+    post:
+      summary: Request asset
+      responses:
+        '200': { description: OK }
+  /api/policies/query:
+    post:
+      summary: Policy query
+      responses:
+        '200': { description: OK }

@@ -1,0 +1,6 @@
+version: "3.0"
+intents: [request_leave,request_asset,policy_query]
+actions: [action_create_leave,action_request_asset]
+responses:
+  utter_default:
+  - text: Sorry?
